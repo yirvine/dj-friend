@@ -810,7 +810,7 @@ export default function HomePage() {
 
               {/* Track Info */}
               <div className="w-48 text-right">
-                <h2 className="text-sm font-bold truncate" title={currentTrack ? currentTrack.title : 'No track selected'}>{currentTrack ? currentTrack.title : 'Select a track'}</h2>
+                <h2 className="text-sm font-bold truncate" title={currentTrack ? currentTrack.title : 'No track selected'}>{currentTrack ? currentTrack.title : ''}</h2>
                 <p className="text-xs text-gray-400">{currentTrack ? `${currentTrack.bpm} BPM • ${currentTrack.key}` : '...'}</p>
               </div>
           </div>
