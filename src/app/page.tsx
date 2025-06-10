@@ -14,7 +14,6 @@ interface Demo {
   relativePath: string;
   timestamp: string; // ISO string format
   title: string;
-  artist: string;
   bpm: number;
   key: string;
   genre: string;
@@ -86,12 +85,12 @@ const Row = ({ index, style, data }: { index: number; style: React.CSSProperties
                     <div className="flex flex-col h-full justify-between">
                         {/* Top: Title and Controls */}
                         <div>
-                            <h2 className="text-lg font-mono font-semibold mb-2 truncate" title={demo.title}>
+                            <h2 className="text-lg font-mono font-semibold mb-1 truncate" title={demo.title}>
                                 {demo.title}
                             </h2>
                             
                             {/* Controls moved here */}
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="flex items-center gap-3 mb-3">
                                 {/* Play/Pause Button */}
                                 <Button
                                     variant="ghost"
@@ -100,7 +99,7 @@ const Row = ({ index, style, data }: { index: number; style: React.CSSProperties
                                       e.stopPropagation(); // Prevent row click from firing
                                       handlePlayClick(index);
                                     }}
-                                    className="text-white hover:bg-gray-700 p-1.5"
+                                    className="text-white hover:bg-gray-700 -ml-2 px-2"
                                 >
                                     {isActive && isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
                                      {/* Added span for styling */}
@@ -216,6 +215,51 @@ export default function HomePage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // --- Skip Next Handler ---
+  const handleSkipNext = useCallback(() => {
+    if (currentPlayingIndex !== null) {
+      const nextIndex = (currentPlayingIndex + 1) % demos.length;
+      // Instead of calling handlePlayClick directly, we'll handle the logic here
+      if (demos.length > 0) {
+        const currentAudio = audioRef.current;
+        if (!currentAudio) return;
+
+        const demoToPlay = demos[nextIndex];
+        setCurrentPlayingIndex(nextIndex);
+        setCurrentTime(0);
+        setDuration(0);
+        setIsTrackLoading(true);
+
+        currentAudio.removeAttribute('src');
+        currentAudio.load();
+        currentAudio.src = demoToPlay.relativePath;
+        currentAudio.load();
+        currentAudio.play().then(() => {
+          setIsPlaying(true);
+        }).catch(e => {
+          if (e.name !== 'AbortError') {
+            console.error("Error on skip next play():", e);
+          }
+        });
+
+        // Handle WaveSurfer for desktop
+        if (wavesurferInstanceRef.current && isMobile === false) {
+          setIsFadingWaveform(true);
+          setTimeout(() => {
+            if (wavesurferInstanceRef.current && audioRef.current) {
+              try {
+                wavesurferInstanceRef.current.load(audioRef.current.src);
+              } catch (error) {
+                console.error("Error calling wavesurfer.load on skip:", error);
+                setIsFadingWaveform(false);
+              }
+            }
+          }, 300);
+        }
+      }
+    }
+  }, [currentPlayingIndex, demos, isMobile]);
+
   // --- Play Click Handler (Explicitly clear src before new load) ---
   const handlePlayClick = useCallback((index: number) => {
     if (isTrackLoading) {
@@ -288,38 +332,52 @@ export default function HomePage() {
           console.log("[WaveSurfer] Initializing for the first time.");
           const ws = WaveSurfer.create({
             container: waveformRef.current,
-            waveColor: '#6b7280', // gray-500
-            progressColor: '#fbbf24', // yellow-400
+            media: currentAudio, // Connect directly to audio element
+            waveColor: '#6B7280',    // gray-500
+            progressColor: '#FBBF24', // yellow-400
             height: 60,
             barWidth: 3,
-            barRadius: 3,
-            url: currentAudio.src,
+            barGap: 2,
+            cursorWidth: 0,           // Hide default cursor/playhead
+            interact: true,           // Allow seeking by clicking waveform
+            autoCenter: true,
+            normalize: true,          // Normalize waveform heights
           });
           wavesurferInstanceRef.current = ws;
 
-          ws.on('ready', () => {
-            console.log("[WaveSurfer] Ready.");
+          ws.on('ready', (durationValue) => {
+            console.log("[WaveSurfer] Ready.", durationValue);
+            setDuration(durationValue);
             setIsFadingWaveform(false);
+            setIsTrackLoading(false);
+          });
+
+          ws.on('audioprocess', (currentTimeValue) => setCurrentTime(currentTimeValue));
+          ws.on('seeking', (currentTimeValue) => setCurrentTime(currentTimeValue));
+          
+          ws.on('error', (error) => {
+            console.error('[WaveSurfer] Error:', error);
+            setIsFadingWaveform(false);
+            setIsTrackLoading(false);
           });
 
           ws.on('finish', () => {
             handleSkipNext();
           });
 
-          ws.on('seeking', (time) => {
-            if(audioRef.current) audioRef.current.currentTime = time;
-          });
+          // Load the current track if there is one
+          if (currentAudio.src) {
+            console.log("[WS] Loading initial media:", currentAudio.src);
+            ws.load(currentAudio.src).catch(e => {
+              console.error("WS initial load error:", e);
+              setIsFadingWaveform(false);
+              setIsTrackLoading(false);
+            });
+          }
         }
       }
     }
-  }, [currentPlayingIndex, isPlaying, demos, isTrackLoading, isMobile]);
-
-  const handleSkipNext = useCallback(() => {
-    if (currentPlayingIndex !== null) {
-      const nextIndex = (currentPlayingIndex + 1) % demos.length;
-      handlePlayClick(nextIndex);
-    }
-  }, [currentPlayingIndex, demos.length, handlePlayClick]);
+  }, [currentPlayingIndex, isPlaying, demos, isTrackLoading, isMobile, handleSkipNext]);
 
   // --- Audio Event Listeners Effect ---
   useEffect(() => {
@@ -417,13 +475,87 @@ export default function HomePage() {
     };
   }, [currentPlayingIndex, demos, handleSkipNext]);
 
-  // --- WaveSurfer Cleanup ---
+  // --- WaveSurfer Initialization/Load Effect (Desktop Only) ---
   useEffect(() => {
-    const wsInstance = wavesurferInstanceRef.current;
-    return () => {
-      if (wsInstance) {
-        wsInstance.destroy();
+    if (typeof window === 'undefined' || isMobile === null) return;
+    const currentAudio = audioRef.current;
+    const currentWaveformContainer = waveformRef.current;
+    
+    if (isMobile) {
+      if (wavesurferInstanceRef.current) {
+        wavesurferInstanceRef.current.destroy();
         wavesurferInstanceRef.current = null;
+      }
+      return;
+    }
+
+    if (!currentAudio || !currentWaveformContainer) return;
+
+    if (!wavesurferInstanceRef.current) {
+      console.log("[WaveSurfer Effect] Initializing NEW instance for Desktop...");
+      const ws = WaveSurfer.create({
+        container: currentWaveformContainer,
+        media: currentAudio,
+        waveColor: '#6B7280',    // gray-500
+        progressColor: '#FBBF24', // yellow-400
+        height: 60,             // Adjust height as needed
+        barWidth: 3,
+        barGap: 2,
+        cursorWidth: 0,           // Hide default cursor/playhead
+        interact: true,           // Allow seeking by clicking waveform
+        autoCenter: true,
+        normalize: true,          // Normalize waveform heights
+      });
+
+      ws.on('ready', (durationValue) => {
+        console.log("[WaveSurfer] Ready.", durationValue);
+        setDuration(durationValue);
+        setIsFadingWaveform(false);
+        setIsTrackLoading(false);
+      });
+
+      ws.on('audioprocess', (currentTimeValue) => setCurrentTime(currentTimeValue));
+      ws.on('seeking', (currentTimeValue) => setCurrentTime(currentTimeValue));
+      ws.on('error', (error) => {
+        console.error('[WaveSurfer] Error:', error);
+        setIsFadingWaveform(false);
+        setIsTrackLoading(false);
+      });
+      ws.on('finish', () => {
+        if (currentPlayingIndex !== null && demos.length > 1) {
+          handleSkipNext();
+        }
+      });
+
+      wavesurferInstanceRef.current = ws;
+
+      if (currentAudio.src && currentPlayingIndex !== null) {
+        console.log("[WS Effect] Loading initial media:", currentAudio.src);
+        setIsFadingWaveform(false);
+        ws.load(currentAudio.src).catch(e => {
+          console.error("WS initial load error:", e);
+        });
+      } else {
+        setIsFadingWaveform(false);
+      }
+    }
+
+    return () => {
+      if (isMobile === false) {
+        console.log("[WaveSurfer Effect] Cleanup running (Desktop). Instance will persist unless unmounting.");
+      }
+    };
+
+  }, [isMobile, currentPlayingIndex, demos, handleSkipNext]);
+
+  // --- WaveSurfer Cleanup on Unmount ---
+  useEffect(() => {
+    const wsRef = wavesurferInstanceRef;
+    return () => {
+      console.log("Component unmounting, destroying WaveSurfer if it exists.");
+      if (wsRef.current) {
+        wsRef.current.destroy();
+        wsRef.current = null;
       }
     };
   }, []);
@@ -581,7 +713,7 @@ export default function HomePage() {
               {/* Track Info */}
               <div className="w-48 text-right">
                 <h2 className="text-sm font-bold truncate" title={currentTrack ? currentTrack.title : 'No track selected'}>{currentTrack ? currentTrack.title : 'Select a track'}</h2>
-                <p className="text-xs text-gray-400">{currentTrack ? `${currentTrack.artist} • ${currentTrack.bpm} BPM • ${currentTrack.key}` : '...'}</p>
+                <p className="text-xs text-gray-400">{currentTrack ? `${currentTrack.bpm} BPM • ${currentTrack.key}` : '...'}</p>
               </div>
           </div>
       </aside>
