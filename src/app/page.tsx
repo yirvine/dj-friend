@@ -196,6 +196,67 @@ export default function HomePage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // --- Simple Audio Focus Management ---
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleAudioStart = () => {
+      // When our audio starts, set up media session 
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing';
+      }
+    };
+
+    const handleAudioPause = () => {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'paused';
+      }
+    };
+
+    // Simple approach: listen for any other audio starting and pause ours
+    const handleWindowFocus = () => {
+      // When window loses focus while our audio is playing, pause it
+      // This catches cases where user clicks Spotify and it starts playing
+      setTimeout(() => {
+        if (document.hidden && isPlaying && audio) {
+          audio.pause();
+          console.log("Paused - window lost focus");
+        }
+      }, 100);
+    };
+
+    const handleIframeClick = (e: Event) => {
+      // If clicking near Spotify iframes, pause our audio
+      const spotifyIframes = document.querySelectorAll('iframe[src*="spotify.com"]');
+      spotifyIframes.forEach(iframe => {
+        const rect = iframe.getBoundingClientRect();
+        const mouseX = (e as MouseEvent).clientX;
+        const mouseY = (e as MouseEvent).clientY;
+        
+        if (mouseX >= rect.left && mouseX <= rect.right && 
+            mouseY >= rect.top && mouseY <= rect.bottom) {
+          if (isPlaying && audio) {
+            audio.pause();
+            console.log("Paused - clicked Spotify area");
+          }
+        }
+      });
+    };
+
+    audio.addEventListener('play', handleAudioStart);
+    audio.addEventListener('pause', handleAudioPause);
+    document.addEventListener('visibilitychange', handleWindowFocus);
+    document.addEventListener('click', handleIframeClick);
+
+    return () => {
+      audio.removeEventListener('play', handleAudioStart);
+      audio.removeEventListener('pause', handleAudioPause);
+      document.removeEventListener('visibilitychange', handleWindowFocus);
+      document.removeEventListener('click', handleIframeClick);
+    };
+  }, [isPlaying]);
+
   // --- Skip Next Handler ---
   const handleSkipNext = useCallback(() => {
     if (currentPlayingIndex !== null) {
@@ -653,7 +714,17 @@ export default function HomePage() {
       {/* Spotify Embed Section */}
       <div className="border-t border-gray-800 p-4 md:p-6 bg-gray-950">
         <div className="max-w-4xl">
-          <h2 className="text-lg font-mono font-semibold mb-4">we on spotify too </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-mono font-semibold">we on spotify too </h2>
+            {isPlaying && (
+              <button 
+                onClick={() => audioRef.current?.pause()}
+                className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md font-mono transition-colors"
+              >
+                stop demo player
+              </button>
+            )}
+          </div>
           <div className="flex gap-4 flex-col md:flex-row">
             <div className="flex-1 rounded-lg overflow-hidden">
               <iframe 
@@ -745,7 +816,7 @@ export default function HomePage() {
           </div>
       </aside>
 
-      <audio ref={audioRef} crossOrigin="anonymous"></audio>
+      <audio ref={audioRef} crossOrigin="anonymous" data-our-player="true"></audio>
     </main>
   );
 }
