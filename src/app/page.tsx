@@ -62,7 +62,7 @@ const Row = ({ index, style, data }: { index: number; style: React.CSSProperties
     return (
         <div style={style}>
             <div
-                className={`p-4 border rounded-lg shadow-sm h-full flex gap-4 ${isActive ? 'border-yellow-400 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:bg-gray-800'} opacity-75 transition-colors duration-200 cursor-pointer`}
+                className={`p-4 border rounded-lg shadow-sm h-full flex gap-4 ${isActive ? 'border-yellow-400 bg-black' : 'border-gray-700 bg-black hover:bg-neutral-800'} opacity-75 transition-colors duration-200 cursor-pointer`}
                 onClick={() => handlePlayClick(index)}
             >
                 {/* Left: Artwork */}
@@ -672,7 +672,7 @@ export default function HomePage() {
   const currentTrack = currentPlayingIndex !== null ? demos[currentPlayingIndex] : null;
 
   return (
-    <main className="bg-gray-950 text-white font-sans flex flex-col h-screen overflow-hidden">
+    <main className="bg-black text-white font-sans flex flex-col h-screen overflow-hidden">
       {/* <Aurora colors={auroraColorStops} /> COMMENTED OUT */}
 
       {/* Header */}
@@ -712,18 +712,10 @@ export default function HomePage() {
       </div>
 
       {/* Spotify Embed Section */}
-      <div className="border-t border-gray-800 p-4 md:p-6 bg-gray-950">
+      <div className="border-t border-gray-800 p-4 md:p-6 bg-black">
         <div className="max-w-4xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-mono font-semibold">we on spotify too </h2>
-            {isPlaying && (
-              <button 
-                onClick={() => audioRef.current?.pause()}
-                className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md font-mono transition-colors"
-              >
-                stop demo player
-              </button>
-            )}
           </div>
           <div className="flex gap-4 flex-col md:flex-row">
             <div className="flex-1 rounded-lg overflow-hidden">
@@ -757,7 +749,7 @@ export default function HomePage() {
       </div>
 
       {/* Player UI (Bottom Bar) */}
-      <aside className="w-full border-t border-gray-800 p-4 flex items-center gap-x-6 bg-gray-950 z-10 shrink-0">
+      <aside className="w-full border-t border-gray-800 p-4 flex items-center gap-x-6 bg-black z-10 shrink-0">
           {/* Main Controls */}
           <div className="flex items-center justify-center gap-2">
             <Button onClick={handleSeekBackward} variant="ghost" size="icon" className="text-white hover:bg-gray-700" disabled={!currentTrack}><Undo2 className="h-5 w-5"/></Button>
