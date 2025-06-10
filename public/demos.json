@@ -2,6 +2,12 @@
   {
     "fileName": "look at me now_short.mp3",
     "relativePath": "/audio/demos/look at me now_short.mp3",
-    "timestamp": "2024-06-09T00:00:00.000Z"
+    "timestamp": "2024-06-09T00:00:00.000Z",
+    "title": "look at me now",
+    "artist": "the friendZone",
+    "bpm": 155,
+    "key": "C Minor",
+    "genre": "Trance",
+    "artwork": "/artwork/lookatme.jpg"
   }
 ]

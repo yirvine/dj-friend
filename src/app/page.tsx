@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window'; // Import react-window
 import { Play, Pause, Volume2, VolumeX, SkipForward, Rewind, Undo2, Redo2, Download } from 'lucide-react'; // Import icons for play/pause and volume, and skip/rewind
 import { Button } from "@/components/ui/button"; // Assuming you have Button component
+import Image from 'next/image'; // Import Next.js Image component
 // import Aurora from '@/components/Aurora'; // Import the Aurora component - COMMENTED OUT
 import WaveSurfer from 'wavesurfer.js'; // Import WaveSurfer
 
@@ -12,6 +13,12 @@ interface Demo {
   fileName: string;
   relativePath: string;
   timestamp: string; // ISO string format
+  title: string;
+  artist: string;
+  bpm: number;
+  key: string;
+  genre: string;
+  artwork: string;
 }
 
 // --- Control Flag ---
@@ -38,15 +45,7 @@ function formatTimestamp(isoString: string): string {
   }
 }
 
-// Basic function to clean up the filename for display
-function cleanFileName(fileName: string): string {
-    // Remove .mp3 extension
-    let cleaned = fileName.replace(/\.mp3$/i, '');
-    // Replace underscores/hyphens with spaces (optional)
-    cleaned = cleaned.replace(/[_-]/g, ' ');
-    // Add more cleaning rules if needed (e.g., for mood tags later)
-    return cleaned;
-}
+
 
 // Helper to format time in seconds to MM:SS
 const formatTime = (time: number) => {
@@ -65,51 +64,74 @@ const Row = ({ index, style, data }: { index: number; style: React.CSSProperties
     return (
         <div style={style}>
             <div
-                className={`p-4 pb-4 border rounded-lg shadow-sm h-full flex flex-col ${isActive ? 'border-yellow-400 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:bg-gray-800'} opacity-75 transition-colors duration-200 cursor-pointer`}
+                className={`p-4 border rounded-lg shadow-sm h-full flex gap-4 ${isActive ? 'border-yellow-400 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:bg-gray-800'} opacity-75 transition-colors duration-200 cursor-pointer`}
                 onClick={() => handlePlayClick(index)}
             >
-                {/* Top section: Title and Timestamp */}
-                <div>
-                    <h2 className="text-xl font-mono font-semibold mb-2 truncate" title={cleanFileName(demo.fileName)}>
-                        {cleanFileName(demo.fileName)}
-                    </h2>
-                     {/* Reduced margin-bottom */}
-                    <p className="text-sm text-gray-400 mb-2">
-                        exported {formatTimestamp(demo.timestamp)}
-                    </p>
-                 </div>
-
-                 {/* Controls section: Removed mt-2 */}
-                <div className="flex items-center gap-3">
-                    {/* Play/Pause Button */}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent row click from firing
-                          handlePlayClick(index);
+                {/* Left: Artwork */}
+                <div className="flex-shrink-0">
+                    <Image 
+                        src={demo.artwork} 
+                        alt={`${demo.title} artwork`}
+                        width={80}
+                        height={80}
+                        className="w-20 h-20 rounded-lg object-cover bg-gray-700"
+                        onError={(e) => {
+                            e.currentTarget.src = '/artwork/placeholder.svg';
                         }}
-                        className="text-white hover:bg-gray-700 p-1.5"
-                    >
-                        {isActive && isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                         {/* Added span for styling */}
-                        <span className="lowercase font-mono">
-                             {isActive && isPlaying ? 'Pause' : 'Play'}
-                        </span>
-                    </Button>
+                    />
+                </div>
 
-                    {/* Conditionally render the Download Link based on the flag */}
-                    {enableDownloads && (
-                         <a
-                            href={demo.relativePath}
-                            download={demo.fileName}
-                            onClick={(e) => e.stopPropagation()} // Prevent row click from firing
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-400 hover:bg-gray-700 hover:text-blue-300 rounded-md transition-colors duration-200 font-mono text-sm"
-                         >
-                            <Download className="h-4 w-4" />
-                            <span className="lowercase">download</span>
-                         </a>
-                    )}
+                {/* Middle: Track Info */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex flex-col h-full justify-between">
+                        {/* Top: Title and Controls */}
+                        <div>
+                            <h2 className="text-lg font-mono font-semibold mb-2 truncate" title={demo.title}>
+                                {demo.title}
+                            </h2>
+                            
+                            {/* Controls moved here */}
+                            <div className="flex items-center gap-3 mb-2">
+                                {/* Play/Pause Button */}
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // Prevent row click from firing
+                                      handlePlayClick(index);
+                                    }}
+                                    className="text-white hover:bg-gray-700 p-1.5"
+                                >
+                                    {isActive && isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+                                     {/* Added span for styling */}
+                                    <span className="lowercase font-mono">
+                                         {isActive && isPlaying ? 'Pause' : 'Play'}
+                                    </span>
+                                </Button>
+
+                                {/* Conditionally render the Download Link based on the flag */}
+                                {enableDownloads && (
+                                     <a
+                                        href={demo.relativePath}
+                                        download={demo.fileName}
+                                        onClick={(e) => e.stopPropagation()} // Prevent row click from firing
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-400 hover:bg-gray-700 hover:text-blue-300 rounded-md transition-colors duration-200 font-mono text-sm"
+                                     >
+                                        <Download className="h-4 w-4" />
+                                        <span className="lowercase">download</span>
+                                     </a>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Bottom: Metadata */}
+                        <div className="flex items-center gap-4 text-xs text-gray-500 font-mono">
+                            <span className="bg-gray-700 px-2 py-1 rounded">{demo.genre}</span>
+                            <span>{demo.bpm} BPM</span>
+                            <span>{demo.key}</span>
+                            <span>{formatTimestamp(demo.timestamp)}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -558,8 +580,8 @@ export default function HomePage() {
 
               {/* Track Info */}
               <div className="w-48 text-right">
-                <h2 className="text-sm font-bold truncate" title={currentTrack ? cleanFileName(currentTrack.fileName) : 'No track selected'}>{currentTrack ? cleanFileName(currentTrack.fileName) : 'Select a track'}</h2>
-                <p className="text-xs text-gray-400">{currentTrack ? `Exported ${formatTimestamp(currentTrack.timestamp)}` : '...'}</p>
+                <h2 className="text-sm font-bold truncate" title={currentTrack ? currentTrack.title : 'No track selected'}>{currentTrack ? currentTrack.title : 'Select a track'}</h2>
+                <p className="text-xs text-gray-400">{currentTrack ? `${currentTrack.artist} • ${currentTrack.bpm} BPM • ${currentTrack.key}` : '...'}</p>
               </div>
           </div>
       </aside>
