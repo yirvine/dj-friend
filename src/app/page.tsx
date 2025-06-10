@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window'; // Import react-window
-import { Play, Pause, Volume2, VolumeX, SkipForward, Rewind, Undo2, Redo2 } from 'lucide-react'; // Import icons for play/pause and volume, and skip/rewind
+import { Play, Pause, Volume2, VolumeX, SkipForward, Rewind, Undo2, Redo2, Download } from 'lucide-react'; // Import icons for play/pause and volume, and skip/rewind
 import { Button } from "@/components/ui/button"; // Assuming you have Button component
 // import Aurora from '@/components/Aurora'; // Import the Aurora component - COMMENTED OUT
 import WaveSurfer from 'wavesurfer.js'; // Import WaveSurfer
@@ -15,7 +15,7 @@ interface Demo {
 }
 
 // --- Control Flag ---
-const ENABLE_DOWNLOADS = false; // Set to true to re-enable downloads
+const ENABLE_DOWNLOADS = true; // Set to true to re-enable downloads
 
 // Helper function to format the timestamp (optional, but nice)
 function formatTimestamp(isoString: string): string {
@@ -103,9 +103,11 @@ const Row = ({ index, style, data }: { index: number; style: React.CSSProperties
                          <a
                             href={demo.relativePath}
                             download={demo.fileName}
-                            className="text-blue-400 hover:underline font-mono text-sm p-1.5"
+                            onClick={(e) => e.stopPropagation()} // Prevent row click from firing
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-400 hover:bg-gray-700 hover:text-blue-300 rounded-md transition-colors duration-200 font-mono text-sm"
                          >
-                            download mp3
+                            <Download className="h-4 w-4" />
+                            <span className="lowercase">download</span>
                          </a>
                     )}
                 </div>
@@ -479,8 +481,8 @@ export default function HomePage() {
 
       {/* Header */}
       <header className="p-4 md:p-6 border-b border-gray-800 z-10 shrink-0">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tighter">Song Demos</h1>
-        <p className="text-gray-400 mt-1">Latest {demos.length} ideas, sorted by recent.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tighter">the friendZone</h1>
+        {/* <p className="text-gray-400 mt-1">Latest {demos.length} ideas, sorted by recent.</p> */}
       </header>
 
       {/* Main Content: List ONLY */}

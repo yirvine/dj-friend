@@ -1,3 +1,25 @@
+# DJ Friend - Audio Player
+
+This project is a web-based audio player designed for a DJ to showcase their demo tracks. The application is built with Next.js and TypeScript, using Tailwind CSS for styling.
+
+### Key Features:
+- **Dynamic Tracklist:** The player loads a list of songs from a `public/demos.json` file. The audio files are located in `public/audio/demos/`.
+- **Audio Playback:** A persistent audio player bar appears at the bottom of the screen when a track is selected.
+- **Player Controls:** The player includes standard controls: Play/Pause, Skip, a seekable progress bar, and volume controls.
+- **Waveform Visualization:** It uses `wavesurfer.js` to render a visual waveform of the currently playing audio.
+- **Track Information:** Each track is displayed in a card with its name and the date it was added. The card also contains links to download the track and listen on Spotify.
+
+### Technical Stack:
+- **Framework:** Next.js (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS v3
+- **Key Libraries:**
+    - `wavesurfer.js` for audio visualization.
+    - `react-window` for efficiently rendering the list of tracks.
+    - `lucide-react` for icons.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
