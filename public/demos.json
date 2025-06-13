@@ -1,13 +1,22 @@
 [
   {
-    "fileName": "look at me now.mp3",
-    "relativePath": "/audio/demos/look at me now.mp3",
-    "timestamp": "2024-06-09T00:00:00.000Z",
-    "title": "look at me now",
-    "artist": "the friendZone",
+    "fileName": "Look At Me Now (dj.friend Remix).mp3",
+    "relativePath": "/audio/Look At Me Now (dj.friend Remix).mp3",
+    "timestamp": "2024-06-13T00:00:00.000Z",
+    "title": "Look At Me Now Remix",
     "bpm": 155,
-    "key": "11D",
+    "key": "9D",
     "genre": "Trance",
-    "artwork": "/artwork/lookatme.jpg"
+    "artwork": "/artwork/lookatmenow.JPG"
+  },
+  {
+    "fileName": "Look At Me Now Extended Mix (dj.friend Remix).mp3",
+    "relativePath": "/audio/Look At Me Now Extended Mix (dj.friend Remix).mp3",
+    "timestamp": "2024-06-13T00:00:00.000Z",
+    "title": "Look At Me Now Remix - Extended Mix",
+    "bpm": 155,
+    "key": "9D",
+    "genre": "Trance",
+    "artwork": "/artwork/lookatmenow.JPG"
   }
 ]
